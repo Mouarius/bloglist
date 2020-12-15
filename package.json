@@ -1,11 +1,23 @@
 {
-  "name": "bloglist",
-  "version": "1.0.0",
-  "description": "Blog list exercise for the fullstackopen course 2020",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Marius Menault",
-  "license": "ISC"
+	"name": "bloglist",
+	"version": "1.0.0",
+	"description": "Blog list exercise for the fullstackopen course 2020",
+	"main": "index.js",
+	"scripts": {
+    "start": "node index.js",
+    "dev":  "nodemon index.js",
+    "lint": "eslint ."
+	},
+	"author": "Marius Menault",
+	"license": "ISC",
+	"devDependencies": {
+		"eslint": "^7.15.0",
+		"nodemon": "^2.0.6"
+	},
+	"dependencies": {
+		"cors": "^2.8.5",
+		"dotenv": "^8.2.0",
+		"express": "^4.17.1",
+		"mongoose": "^5.11.8"
+	}
 }
