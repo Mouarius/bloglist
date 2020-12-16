@@ -37,7 +37,21 @@ describe('Author with most blogs', () => {
     expect(mostBlogs([])).toBe(null)
   })
 
-  test('must return { author: 'Robert C. Martin', count: 3 }', () => {
+  test('must return Robert C. Martin, 3', () => {
     expect(mostBlogs(blogs)).toEqual({ author: 'Robert C. Martin', count: 3 })
+  })
+})
+describe('Author with most likes', () => {
+  const { mostLikes } = listHelper
+
+  test('must return null', () => {
+    expect(mostLikes([])).toBe(null)
+  })
+
+  test('must return Edsger W. Dijkstra, 17', () => {
+    expect(mostLikes(blogs)).toEqual({
+      author: 'Edsger W. Dijkstra',
+      likes: 17
+    })
   })
 })
