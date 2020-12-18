@@ -5,10 +5,9 @@ blogsRouter.use('/', (req, res, next) => {
   next()
 })
 
-blogsRouter.get('/', (request, response) => {
-  Blog.find({}).then((blogs) => {
-    response.status(200).json(blogs)
-  })
+blogsRouter.get('/', async (request, response) => {
+  const blogs = await Blog.find({})
+  response.status(200).json(blogs)
 })
 
 blogsRouter.post('/', (request, response) => {
