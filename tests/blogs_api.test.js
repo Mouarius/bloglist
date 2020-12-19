@@ -23,6 +23,12 @@ describe('getting blogs content', () => {
     const response = await api.get('/api/blogs')
     expect(response.body).toHaveLength(helper.initialBlogs.length)
   })
+  test('a specific blog can be returned', async () => {
+    const blogs = await helper.blogsInDb()
+    const blogToGet = blogs[0]
+    const response = await api.get(`/api/blogs/${blogToGet.id}`).expect(200)
+    expect(response.body).toEqual(blogToGet)
+  })
 })
 describe('structure of database', () => {
   test('id should be defined', async () => {
