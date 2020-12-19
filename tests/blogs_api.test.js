@@ -3,6 +3,7 @@ const mongoose = require('mongoose')
 const app = require('../app')
 const Blog = require('../models/blog')
 const helper = require('./test_helper')
+const { response } = require('../app')
 
 const api = supertest(app)
 
@@ -87,8 +88,6 @@ describe('deleting blogs', () => {
   test('a post can be deleted', async () => {
     const blogs = await helper.blogsInDb()
     const blogToDelete = blogs[0]
-    console.log('blogToDelete :>> ', blogToDelete)
-    console.log('blogToDelete.id :>> ', blogToDelete.id)
     await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
 
     const blogsAtEnd = await helper.blogsInDb()
@@ -98,7 +97,45 @@ describe('deleting blogs', () => {
     expect(blogsAtEndTitles).not.toContain(blogs[0].title)
   })
 })
+describe('modifying blog content', () => {
+  test('modify the number of likes only ', async () => {
+    const blogs = await helper.blogsInDb()
+    const blogToUpdate = blogs[0]
+    const updatedBlog = {
+      likes: 100
+    }
+    await api.put(`/api/blogs/${blogToUpdate.id}`).send(updatedBlog).expect(200)
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogsAtEndLikes = blogsAtEnd.map((blog) => blog.likes)
+    expect(blogsAtEndLikes[0]).toBe(100)
+  })
+  test('modify the title only', async () => {
+    const blogs = await helper.blogsInDb()
+    const blogToUpdate = blogs[0]
+    const updatedBlog = {
+      title: 'new title'
+    }
+    await api.put(`/api/blogs/${blogToUpdate.id}`).send(updatedBlog).expect(200)
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogsAtEndTitles = blogsAtEnd.map((blog) => blog.title)
+    expect(blogsAtEndTitles[0]).toBe('new title')
+  })
+  test('modify the title and number of likes', async () => {
+    const blogs = await helper.blogsInDb()
+    const blogToUpdate = blogs[0]
+    const updatedBlog = {
+      title: 'new title',
+      likes: 100
+    }
+    await api.put(`/api/blogs/${blogToUpdate.id}`).send(updatedBlog).expect(200)
+    const blogsAtEnd = await helper.blogsInDb()
+    const blogsAtEndTitles = blogsAtEnd.map((blog) => blog.title)
+    const blogsAtEndLikes = blogsAtEnd.map((blog) => blog.likes)
 
+    expect(blogsAtEndTitles[0]).toBe('new title')
+    expect(blogsAtEndLikes[0]).toBe(100)
+  })
+})
 afterAll(() => {
   mongoose.connection.close()
 })
