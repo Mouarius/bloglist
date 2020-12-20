@@ -1,9 +1,10 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
+const bcrypt = require('bcrypt')
 const app = require('../app')
 const Blog = require('../models/blog')
 const helper = require('./test_helper')
-const { response } = require('../app')
+const User = require('../models/user')
 
 const api = supertest(app)
 
@@ -134,6 +135,35 @@ describe('modifying blog content', () => {
 
     expect(blogsAtEndTitles[0]).toBe('new title')
     expect(blogsAtEndLikes[0]).toBe(100)
+  })
+})
+
+describe('when there is initially one user in db', () => {
+  beforeEach(async () => {
+    await User.deleteMany({})
+    // console.log('deleted')
+    const passwordHash = await bcrypt.hash('toor', 10)
+    // console.log(passwordHash)
+    const rootUser = new User({ username: 'root', passwordHash })
+    await rootUser.save()
+    // console.log('created')
+  })
+  test('should create a new user', async () => {
+    console.log('Entering tests')
+    const newUser = {
+      username: 'mouarius',
+      name: 'Marius Menault',
+      password: 'motdepasse'
+    }
+    await api
+      .post('/api/users')
+      .send(newUser)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    const usersAtEnd = await helper.usersInDb()
+    expect(usersAtEnd).toHaveLength(2)
+    const usernames = await usersAtEnd.map((user) => user.username)
+    expect(usernames).toContain('mouarius')
   })
 })
 afterAll(() => {
