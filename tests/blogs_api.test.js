@@ -208,6 +208,11 @@ describe('USERS TESTS', () => {
   })
 })
 
+describe('LOGIN TESTS', () => {
+  beforeEach(async () => {})
+  test('login an existing user', async (request, response) => {})
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
