@@ -26,7 +26,7 @@ blogsRouter.post('/', async (request, response) => {
 
   const blogToAdd = new Blog({
     title: body.title,
-    url: body.title,
+    url: body.url,
     likes: body.likes,
     author: user._id
   })
