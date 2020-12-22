@@ -42,14 +42,29 @@ const initialBlogs = [
   }
 ]
 
+const initialUsers = [
+  { username: 'mchan', name: 'Michael Chan', password: 'michaelc' },
+  { username: 'rcmartin', name: 'Robert C. Martin', password: 'robertcmartin' },
+  { username: 'ewdijkstra', name: 'Edsger W. Dijkstra', password: 'edsgerwd' }
+]
+
 const blogsInDb = async () => {
   const blogs = await Blog.find({})
   return blogs.map((blog) => blog.toJSON())
 }
+const clearBlogsDatabase = () => Blog.deleteMany({})
 
 const usersInDb = async () => {
   const users = await User.find({})
   return users.map((user) => user.toJSON())
 }
+const clearUsersDatabase = () => User.deleteMany({})
 
-module.exports = { initialBlogs, blogsInDb, usersInDb }
+module.exports = {
+  initialBlogs,
+  initialUsers,
+  blogsInDb,
+  usersInDb,
+  clearBlogsDatabase,
+  clearUsersDatabase
+}

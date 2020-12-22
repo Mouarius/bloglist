@@ -1,6 +1,7 @@
 const supertest = require('supertest')
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 const app = require('../app')
 const Blog = require('../models/blog')
 const helper = require('./test_helper')
@@ -8,13 +9,51 @@ const User = require('../models/user')
 
 const api = supertest(app)
 
-describe('NOTES TESTS', () => {
-  beforeEach(async () => {
-    await Blog.deleteMany({})
-    const blogObjects = helper.initialBlogs.map((blog) => new Blog(blog))
-    const promiseArray = blogObjects.map((blog) => blog.save())
-    await Promise.all(promiseArray)
+const initializeUsersDatabase = async (users) => {
+  const userRequests = await users.map((user) =>
+    api.post('/api/users').send(user)
+  )
+  await Promise.all(userRequests)
+}
+const initializeBlogsDatabase = async (initialBlogs) => {
+  const users = await User.find({})
+
+  const blogPromisesArray = []
+  initialBlogs.forEach((blog) => {
+    const authorUser = users.find((u) => u.name === blog.author)
+    const blogToAdd = { ...blog, author: authorUser.id }
+    const blogObject = new Blog(blogToAdd)
+    blogPromisesArray.push(blogObject.save())
   })
+  const resolvedBlogs = await Promise.all(blogPromisesArray)
+  const userPromisesArray = []
+
+  users.forEach((user) => {
+    const blogstoAdd = resolvedBlogs
+      .filter((blog) => user._id.toString() === blog.author.toString())
+      .map((blog) => blog._id)
+    user.blogs = user.blogs.concat(blogstoAdd)
+    userPromisesArray.push(user)
+  })
+  await Promise.all(userPromisesArray)
+}
+// TODO : must refactor the beforeEach with Jest ways of handling asynchronous code
+
+describe('BLOGS TESTS', () => {
+  beforeEach(async () => {
+    await helper.clearUsersDatabase()
+    await helper.clearBlogsDatabase()
+
+    await initializeUsersDatabase(helper.initialUsers)
+    await initializeBlogsDatabase(helper.initialBlogs)
+
+    // const users = await helper.usersInDb()
+    // const blogs = await helper.blogsInDb()
+
+    // console.log('users :>> ', users)
+    // console.log('blogs :>> ', blogs)
+  })
+
   describe('getting blogs content', () => {
     test('blogs are returned as JSON', async () => {
       await api
@@ -29,8 +68,9 @@ describe('NOTES TESTS', () => {
     test('a specific blog can be returned', async () => {
       const blogs = await helper.blogsInDb()
       const blogToGet = blogs[0]
+      console.log('blogToGet :>> ', blogToGet)
       const response = await api.get(`/api/blogs/${blogToGet.id}`).expect(200)
-      expect(response.body).toEqual(blogToGet)
+      expect(response.body.id).toEqual(blogToGet.id)
     })
   })
   describe('structure of database', () => {
@@ -44,107 +84,6 @@ describe('NOTES TESTS', () => {
       expect(response.body[0].__v).toBeUndefined()
       // eslint-disable-next-line no-underscore-dangle
       expect(response.body[0]._id).toBeUndefined()
-    })
-  })
-
-  describe('adding new blogs', () => {
-    test('a new blog can be added', async () => {
-      const blogToAdd = {
-        title: 'Added blog',
-        author: 'Marius Menault',
-        url: 'https://localhost',
-        likes: 0
-      }
-      await api
-        .post('/api/blogs')
-        .send(blogToAdd)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-      const blogsInDb = await helper.blogsInDb()
-      expect(blogsInDb).toHaveLength(helper.initialBlogs.length + 1)
-      const blogsTitle = blogsInDb.map((blog) => blog.title)
-      expect(blogsTitle).toContain(blogToAdd.title)
-    })
-    test('a blog with no title is not added', async () => {
-      const blogWithoutTitle = {
-        author: 'Marius Menault',
-        url: 'http://localhost',
-        likes: 0
-      }
-      await api.post('/api/blogs').send(blogWithoutTitle).expect(400)
-      const blogsAtEnd = await helper.blogsInDb()
-      expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
-    })
-    test('a blog with no url is not added', async () => {
-      const blogWithoutTitle = {
-        title: 'Added blog',
-        author: 'Marius Menault',
-        likes: 0
-      }
-      await api.post('/api/blogs').send(blogWithoutTitle).expect(400)
-      const blogsAtEnd = await helper.blogsInDb()
-      expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
-    })
-  })
-  describe('deleting blogs', () => {
-    test('a post can be deleted', async () => {
-      const blogs = await helper.blogsInDb()
-      const blogToDelete = blogs[0]
-      await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
-
-      const blogsAtEnd = await helper.blogsInDb()
-      expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length - 1)
-
-      const blogsAtEndTitles = blogsAtEnd.map((blog) => blog.title)
-      expect(blogsAtEndTitles).not.toContain(blogs[0].title)
-    })
-  })
-  describe('modifying blog content', () => {
-    test('modify the number of likes only ', async () => {
-      const blogs = await helper.blogsInDb()
-      const blogToUpdate = blogs[0]
-      const updatedBlog = {
-        likes: 100
-      }
-      await api
-        .put(`/api/blogs/${blogToUpdate.id}`)
-        .send(updatedBlog)
-        .expect(200)
-      const blogsAtEnd = await helper.blogsInDb()
-      const blogsAtEndLikes = blogsAtEnd.map((blog) => blog.likes)
-      expect(blogsAtEndLikes[0]).toBe(100)
-    })
-    test('modify the title only', async () => {
-      const blogs = await helper.blogsInDb()
-      const blogToUpdate = blogs[0]
-      const updatedBlog = {
-        title: 'new title'
-      }
-      await api
-        .put(`/api/blogs/${blogToUpdate.id}`)
-        .send(updatedBlog)
-        .expect(200)
-      const blogsAtEnd = await helper.blogsInDb()
-      const blogsAtEndTitles = blogsAtEnd.map((blog) => blog.title)
-      expect(blogsAtEndTitles[0]).toBe('new title')
-    })
-    test('modify the title and number of likes', async () => {
-      const blogs = await helper.blogsInDb()
-      const blogToUpdate = blogs[0]
-      const updatedBlog = {
-        title: 'new title',
-        likes: 100
-      }
-      await api
-        .put(`/api/blogs/${blogToUpdate.id}`)
-        .send(updatedBlog)
-        .expect(200)
-      const blogsAtEnd = await helper.blogsInDb()
-      const blogsAtEndTitles = blogsAtEnd.map((blog) => blog.title)
-      const blogsAtEndLikes = blogsAtEnd.map((blog) => blog.likes)
-
-      expect(blogsAtEndTitles[0]).toBe('new title')
-      expect(blogsAtEndLikes[0]).toBe(100)
     })
   })
 })
@@ -209,8 +148,34 @@ describe('USERS TESTS', () => {
 })
 
 describe('LOGIN TESTS', () => {
-  beforeEach(async () => {})
-  test('login an existing user', async (request, response) => {})
+  beforeEach(async () => {
+    await User.deleteMany({})
+    const rootUser = {
+      username: 'root',
+      name: 'Superuser',
+      password: 'toor'
+    }
+    await api.post('/api/users').send(rootUser)
+  })
+  test('login fails with bad username', async () => {
+    const userLogin = { username: 'blob', password: 'falsePassword' }
+    const response = await api.post('/api/login').send(userLogin).expect(401)
+    expect(response.body.error).toEqual('invalid username or password')
+  })
+  test('login fails with no username or password ', async () => {
+    const userLogin = { username: '', password: '' }
+    const response = await api.post('/api/login').send(userLogin).expect(401)
+    expect(response.body.error).toEqual('invalid username or password')
+  })
+  test('login fails with bad password', async () => {
+    const userLogin = { username: 'root', password: 'falsePassword' }
+    const response = await api.post('/api/login').send(userLogin).expect(401)
+    expect(response.body.error).toEqual('invalid username or password')
+  })
+  test('login succeeds with good creditentials', async () => {
+    const userLogin = { username: 'root', password: 'toor' }
+    await api.post('/api/login').send(userLogin).expect(200)
+  })
 })
 
 afterAll(() => {
