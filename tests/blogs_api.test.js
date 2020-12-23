@@ -170,9 +170,7 @@ describe('BLOGS TESTS', () => {
     })
     test('__v and _id shoud not exist', async () => {
       const response = await api.get('/api/blogs')
-      // eslint-disable-next-line no-underscore-dangle
       expect(response.body[0].__v).toBeUndefined()
-      // eslint-disable-next-line no-underscore-dangle
       expect(response.body[0]._id).toBeUndefined()
     })
   })
@@ -197,7 +195,6 @@ describe('BLOGS TESTS', () => {
       const authorInDbAtStart = usersAtStart.find(
         (user) => user.username === 'rcmartin'
       )
-      // console.log('authorAtStart :>> ', authorInDbAtStart)
       const author = helper.initialUsers[1]
       const loginResponse = await api.post('/api/login').send({ ...author })
       const { token } = loginResponse.body
@@ -219,7 +216,6 @@ describe('BLOGS TESTS', () => {
       const authorInDbAtStart = usersAtStart.find(
         (user) => user.username === 'rcmartin'
       )
-      // console.log('authorAtStart :>> ', authorInDbAtStart)
       const author = helper.initialUsers[1]
       const loginResponse = await api.post('/api/login').send({ ...author })
       const { token } = loginResponse.body
@@ -240,6 +236,46 @@ describe('BLOGS TESTS', () => {
       )
       const authorBlogs = authorInDbAtEnd.blogs.map((blog) => blog.toString())
       expect(authorBlogs).toContain(response.body.id.toString())
+    })
+  })
+  describe.only('deleting a blog', () => {
+    test('cannot delete a blog without authentification', async () => {
+      const blogsAtStart = await helper.blogsInDb()
+      const blogToDelete = blogsAtStart[0]
+      const response = await api
+        .delete(`/api/blogs/${blogToDelete._id}`)
+        .expect(401)
+      expect(response.body.error).toEqual('invalid token')
+    })
+    test('can delete a blog when authentificated', async () => {
+      const blogsAtStart = await helper.blogsInDb()
+      const usersAtStart = await helper.usersInDb()
+      const userBlogsAtStart = usersAtStart.find(
+        (user) => user.username === 'rcmartin'
+      ).blogs
+      const userToLog = helper.initialUsers.find(
+        (user) => user.username === 'rcmartin'
+      )
+      const loginResponse = await api
+        .post('/api/login')
+        .send(userToLog)
+        .expect(200)
+      const blogToDelete = blogsAtStart.filter(
+        (blog) => blog.author.toString() === loginResponse.body.id.toString()
+      )[0]
+
+      await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set('Authorization', `bearer ${loginResponse.body.token}`)
+        .expect(204)
+      const blogsAtEnd = await helper.blogsInDb()
+      const usersAtEnd = await helper.usersInDb()
+      const userBlogsAtEnd = usersAtEnd.find(
+        (user) => user.username === 'rcmartin'
+      ).blogs
+
+      expect(blogsAtEnd).toHaveLength(blogsAtStart.length - 1)
+      expect(userBlogsAtEnd).toHaveLength(userBlogsAtStart.length - 1)
     })
   })
 })
