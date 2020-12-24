@@ -47,7 +47,7 @@ describe('USERS TESTS', () => {
       const rootUser = new User({
         username: 'root',
         name: 'Superuser',
-        passwordHash
+        passwordHash,
       })
       await rootUser.save()
     })
@@ -64,7 +64,7 @@ describe('USERS TESTS', () => {
       const newUser = {
         username: 'mouarius',
         name: 'Marius Menault',
-        password: 'motdepasse'
+        password: 'motdepasse',
       }
       await api
         .post('/api/users')
@@ -81,7 +81,7 @@ describe('USERS TESTS', () => {
       const newUser = {
         username: 'root',
         name: 'Superuser',
-        password: 'toor'
+        password: 'toor',
       }
       const result = await api
         .post('/api/users')
@@ -104,7 +104,7 @@ describe('LOGIN TESTS', () => {
     const rootUser = {
       username: 'root',
       name: 'Superuser',
-      password: 'toor'
+      password: 'toor',
     }
     await api.post('/api/users').send(rootUser)
   })
@@ -184,7 +184,7 @@ describe('BLOGS TESTS', () => {
       const newBlog = {
         title: 'The new blog',
         url: 'http://localhost',
-        token: 'aaaabfksdfb'
+        token: 'aaaabfksdfb',
       }
       const response = await api.post('/api/blogs').send(newBlog).expect(401)
       expect(response.body.error).toBe('invalid token')
@@ -199,7 +199,7 @@ describe('BLOGS TESTS', () => {
       const loginResponse = await api.post('/api/login').send({ ...author })
       const { token } = loginResponse.body
       const newBlog = {
-        title: 'The new blog'
+        title: 'The new blog',
       }
       await api
         .post('/api/blogs')
@@ -221,7 +221,7 @@ describe('BLOGS TESTS', () => {
       const { token } = loginResponse.body
       const newBlog = {
         title: 'The new blog',
-        url: 'http://localhost'
+        url: 'http://localhost',
       }
       console.log('newBlog :>> ', newBlog)
       const response = await api
@@ -238,7 +238,7 @@ describe('BLOGS TESTS', () => {
       expect(authorBlogs).toContain(response.body.id.toString())
     })
   })
-  describe.only('deleting a blog', () => {
+  describe('deleting a blog', () => {
     test('cannot delete a blog without authentification', async () => {
       const blogsAtStart = await helper.blogsInDb()
       const blogToDelete = blogsAtStart[0]
