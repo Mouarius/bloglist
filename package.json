@@ -8,7 +8,8 @@
     "dev": "NODE_ENV=development nodemon index.js",
     "lint": "eslint .",
     "test": "NODE_ENV=test jest --verbose --runInBand",
-    "test:api": "NODE_ENV=test jest /tests/blogs_api --verbose --runInBand"
+    "test:api": "NODE_ENV=test jest /tests/blogs_api --verbose --runInBand",
+    "start:test": "NODE_ENV=test node index.js"
   },
   "author": "Marius Menault",
   "license": "ISC",
